@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 118" width="720" height="118">
+<style>.m{font-family:ui-monospace,'SFMono-Regular',Menlo,Monaco,Consolas,'Liberation Mono',monospace;font-size:13.5px;dominant-baseline:middle}@keyframes req{0%,1.6%{opacity:0}2.1%{opacity:1}75.0%{opacity:1}75.5%,100%{opacity:0}}.req{opacity:0;animation:req 14s infinite}@keyframes sta{0%,22.4%{opacity:0}22.9%{opacity:1}75.0%{opacity:1}75.5%,100%{opacity:0}}.sta{opacity:0;animation:sta 14s infinite}@keyframes sqg{0%,8.8%{opacity:0}9.3%{opacity:1}22.9%{opacity:1}23.4%,100%{opacity:0}}.sqg{opacity:0;animation:sqg 14s infinite}@keyframes sqp{0%,100%{opacity:.15}45%{opacity:1}}.sq0{animation:sqp .75s 0.00s ease-in-out infinite}.sq1{animation:sqp .75s 0.18s ease-in-out infinite}.sq2{animation:sqp .75s 0.36s ease-in-out infinite}.sq3{animation:sqp .75s 0.54s ease-in-out infinite}@keyframes brk{0%,21.6%{opacity:0}22.1%{opacity:1}75.0%{opacity:1}75.5%,100%{opacity:0}}.brk{opacity:0;animation:brk 14s infinite}@keyframes nam{0%,22.4%{opacity:0}22.9%{opacity:1}75.0%{opacity:1}75.5%,100%{opacity:0}}.nam{opacity:0;animation:nam 14s infinite}@keyframes ttl{0%,32.4%{opacity:0}32.9%{opacity:1}75.0%{opacity:1}75.5%,100%{opacity:0}}.ttl{opacity:0;animation:ttl 14s infinite}</style>
+<text x="20" y="26" class="m req"><tspan fill="#58a6ff">GET</tspan><tspan fill="#c9d1d9"> /profile/zainab-masood</tspan><tspan fill="#6e7681">  HTTP/1.1</tspan></text>
+<text x="20" y="48" class="m sta"><tspan fill="#6e7681">←  </tspan><tspan fill="#3fb950">200 OK</tspan></text>
+<text x="20" y="48" class="m sqg"><tspan fill="#6e7681">←  </tspan><tspan fill="#8b949e">102 Processing  </tspan></text>
+<g class="sqg">
+  <rect class="sq0" x="250" y="41" width="9" height="9" rx="1.5" fill="#0e4429"/>
+  <rect class="sq1" x="261" y="41" width="9" height="9" rx="1.5" fill="#006d32"/>
+  <rect class="sq2" x="272" y="41" width="9" height="9" rx="1.5" fill="#26a641"/>
+  <rect class="sq3" x="283" y="41" width="9" height="9" rx="1.5" fill="#39d353"/>
+</g>
+<text x="20" y="70" class="m brk"><tspan fill="#6e7681">{</tspan></text>
+<text x="36" y="72" class="m nam"><tspan fill="#8b949e">"name"</tspan><tspan fill="#6e7681">: </tspan><tspan fill="#a5d6ff">"Zainab Masood"</tspan><tspan fill="#6e7681">,</tspan></text>
+<text x="36" y="93" class="m ttl"><tspan fill="#8b949e">"title"</tspan><tspan fill="#6e7681">: </tspan><tspan fill="#a5d6ff">"Full-Stack Web Developer"</tspan><tspan fill="#6e7681">  }</tspan></text>
+</svg>

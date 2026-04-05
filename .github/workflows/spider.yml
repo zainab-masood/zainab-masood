@@ -1,0 +1,278 @@
+name: Spider Web Graph
+
+on:
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate SVGs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_USERNAME: ${{ github.repository_owner }}
+        run: |
+          python - <<'PYEOF'
+          import math, os, sys, json, urllib.request
+          from datetime import date, timedelta
+
+          CELL, GAP = 10, 3
+          STEP      = CELL + GAP
+          COLS, ROWS= 53, 7
+          PL, PT    = 34, 24
+          PR, PB    = 8,  8
+          W = PL + COLS * STEP + PR
+          H = PT + ROWS * STEP + PB
+          GRID_L = PL
+          GRID_T = PT
+
+          DARK_CLR  = ["#161b22","#0e4429","#006d32","#26a641","#39d353"]
+          LIGHT_CLR = ["#ebedf0","#9be9a8","#40c463","#30a14e","#216e39"]
+          BG   = {"dark":"#0d1117",                "light":"#ffffff"}
+          TEXT = {"dark":"#8b949e",                "light":"#57606a"}
+          SILK = {"dark":"rgba(220,230,255,0.82)", "light":"rgba(4,4,16,0.86)"}
+          KNOT = {"dark":"rgba(255,255,255,0.97)", "light":"rgba(0,0,8,0.93)"}
+
+          N_SPOKES    = 8
+          RING_FRACS  = [0.35, 0.70, 1.00]
+          MIN_R_CELLS = 3
+          MAX_R_CELLS = 13
+          MIN_ANG_SEP = 2*math.pi / (N_SPOKES * 1.4)
+
+          APPROACH_T = 0.80
+          SPOKE_DRAW = 0.90
+          SPOKE_RET  = 0.60
+          RING_DRAW  = 3.00
+          RING_RET   = 0.70
+          IDLE_T     = 5.50
+
+          MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+          DOW    = {1:"Mon", 3:"Wed", 5:"Fri"}
+
+          USERNAME = os.environ.get("GITHUB_USERNAME", "zainab-masood")
+          TOKEN    = os.environ.get("GITHUB_TOKEN", "")
+
+          def cx(col): return PL + col*STEP + CELL/2
+          def cy(row): return PT + row*STEP + CELL/2
+          def cl(col): return PL + col*STEP
+          def ct(row): return PT + row*STEP
+          def d2(ax,ay,bx,by): return math.hypot(bx-ax, by-ay)
+          def clamp(v): return max(1e-4, min(1-1e-4, v))
+          def ang_diff(a,b): return abs(math.atan2(math.sin(a-b), math.cos(a-b)))
+
+          def fetch():
+              q = json.dumps({"query":(
+                  '{ user(login:"%s") { contributionsCollection {'
+                  '  contributionCalendar { weeks { contributionDays {'
+                  '    date contributionCount }}}}}}'
+              ) % USERNAME})
+              req = urllib.request.Request(
+                  "https://api.github.com/graphql", data=q.encode(),
+                  headers={"Authorization":f"Bearer {TOKEN}","Content-Type":"application/json"})
+              try:
+                  with urllib.request.urlopen(req, timeout=20) as r:
+                      data = json.loads(r.read())
+                  weeks = (data["data"]["user"]["contributionsCollection"]
+                               ["contributionCalendar"]["weeks"])
+                  return [[{"d":day["date"],"c":day["contributionCount"]}
+                           for day in w["contributionDays"]] for w in weeks]
+              except Exception as e:
+                  print(f"API error ({e})", file=sys.stderr)
+                  return demo()
+
+          def demo():
+              import random; random.seed(42)
+              today = date.today()
+              s = today - timedelta(weeks=52)
+              s -= timedelta(days=s.isoweekday() % 7)
+              cur = s; wks = []
+              for _ in range(COLS):
+                  wk = []
+                  for _ in range(ROWS):
+                      c = 0
+                      if cur <= today:
+                          c = max(0, int(random.gauss(2,3)))
+                          if random.random() < 0.10: c += random.randint(5,14)
+                      wk.append({"d":cur.isoformat(),"c":c}); cur += timedelta(days=1)
+                  wks.append(wk)
+              return wks
+
+          def make_lv(weeks):
+              counts = [d["c"] for w in weeks for d in w if d["c"]>0]
+              if not counts: return lambda c:0
+              s=sorted(counts); n=len(s)
+              q=[s[max(0,n//4-1)],s[max(0,n//2-1)],s[max(0,3*n//4-1)]]
+              def lv(c):
+                  if c==0:    return 0
+                  if c<=q[0]: return 1
+                  if c<=q[1]: return 2
+                  if c<=q[2]: return 3
+                  return 4
+              return lv
+
+          def pick_hub(weeks, lv):
+              best=-1; bc,br=COLS//2,ROWS//2
+              for col,wk in enumerate(weeks):
+                  for row,d in enumerate(wk):
+                      if d["c"]>best: best,bc,br=d["c"],col,row
+              return bc,br
+
+          def pick_targets(weeks, lv, hub_col, hub_row):
+              hcx, hcy = cx(hub_col), cy(hub_row)
+              candidates = []
+              for col,wk in enumerate(weeks):
+                  for row,d in enumerate(wk):
+                      if (col,row)==(hub_col,hub_row): continue
+                      c = d["c"]
+                      if c==0: continue
+                      dc,dr = col-hub_col, row-hub_row
+                      r = math.hypot(dc,dr)
+                      if r<MIN_R_CELLS or r>MAX_R_CELLS: continue
+                      angle = math.atan2(dr,dc)
+                      score = c*lv(c) / (1+abs(r-6)*0.2)
+                      candidates.append((score,c,col,row,angle))
+              candidates.sort(reverse=True)
+              targets=[]; used_angles=[]
+              for _,_,col,row,angle in candidates:
+                  if used_angles and min(ang_diff(angle,ua) for ua in used_angles)<MIN_ANG_SEP:
+                      continue
+                  targets.append((col,row,cx(col),cy(row)))
+                  used_angles.append(angle)
+                  if len(targets)>=N_SPOKES: break
+              targets.sort(key=lambda t: math.atan2(t[3]-hcy, t[2]-hcx))
+              return targets
+
+          def build_rings(hx, hy, targets):
+              rings=[]
+              for frac in RING_FRACS:
+                  pts=[]
+                  for _,_,tx,ty in targets:
+                      pts.append((tx,ty) if frac>=1.0 else (hx+(tx-hx)*frac, hy+(ty-hy)*frac))
+                  rings.append(pts)
+              return rings
+
+          def build_waypoints(hx,hy,targets,rings,spoke_starts,ring_starts,TOTAL):
+              wpts=[]
+              ex=max(GRID_L-10,hx-30); ey=max(GRID_T-10,hy-30)
+              wpts.append(((ex,ey),0.0))
+              wpts.append(((hx,hy),APPROACH_T))
+              for i,(_,_,tx,ty) in enumerate(targets):
+                  wpts.append(((tx,ty),spoke_starts[i]+SPOKE_DRAW))
+                  wpts.append(((hx,hy),spoke_starts[i]+SPOKE_DRAW+SPOKE_RET))
+              for j,rpts in enumerate(rings):
+                  n=len(rpts); rs=ring_starts[j]
+                  for k,(rx,ry) in enumerate(rpts):
+                      wpts.append(((rx,ry), rs+RING_DRAW*k/max(n-1,1)))
+                  wpts.append((rpts[0], rs+RING_DRAW))
+                  wpts.append(((hx,hy), rs+RING_DRAW+RING_RET))
+              wpts.append(((hx,hy),TOTAL))
+              return wpts
+
+          def waypoints_to_css(wpts, TOTAL):
+              frames=[]
+              for i,((x,y),t) in enumerate(wpts):
+                  pct = 0.0 if i==0 else (100.0 if i==len(wpts)-1 else t/TOTAL*100)
+                  frames.append(f"{pct:.2f}%{{transform:translate({x:.1f}px,{y:.1f}px)}}")
+              return "".join(frames)
+
+          def kv(attr,t0,t1,v0,v1,TOTAL):
+              f0,f1=clamp(t0/TOTAL),clamp(t1/TOTAL)
+              return (f'<animate attributeName="{attr}" '
+                      f'values="{v0};{v0};{v1};{v1}" '
+                      f'keyTimes="0;{f0:.4f};{f1:.4f};1" '
+                      f'dur="{TOTAL:.2f}s" repeatCount="indefinite" calcMode="linear"/>')
+
+          def gen(weeks, theme):
+              colors=DARK_CLR if theme=="dark" else LIGHT_CLR
+              lv=make_lv(weeks)
+              hub_col,hub_row=pick_hub(weeks,lv)
+              hx,hy=cx(hub_col),cy(hub_row)
+              targets=pick_targets(weeks,lv,hub_col,hub_row)
+              if not targets: targets=[(hub_col,hub_row+2,hx,hy+CELL*2)]
+              rings=build_rings(hx,hy,targets)
+              t=APPROACH_T; spoke_starts=[]
+              for _ in targets:
+                  spoke_starts.append(t); t+=SPOKE_DRAW+SPOKE_RET
+              ring_starts=[]
+              for _ in rings:
+                  ring_starts.append(t); t+=RING_DRAW+RING_RET
+              TOTAL=t+IDLE_T
+              wpts=build_waypoints(hx,hy,targets,rings,spoke_starts,ring_starts,TOTAL)
+              css_kf=waypoints_to_css(wpts,TOTAL)
+              mlabels,last_m=[],-1
+              for col,wk in enumerate(weeks):
+                  if wk:
+                      m=int(wk[0]["d"][5:7])-1
+                      if m!=last_m: last_m=m; mlabels.append((PL+col*STEP,MONTHS[m]))
+              bg=BG[theme]; tc=TEXT[theme]; silk=SILK[theme]; knot=KNOT[theme]
+              o=[]
+              o.append(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" aria-label="Contribution spider web">')
+              o.append('<defs>')
+              o.append('  <filter id="sg" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur in="SourceGraphic" stdDeviation="1.3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>')
+              o.append('  <filter id="sh" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur in="SourceGraphic" stdDeviation="3.0" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>')
+              o.append('</defs>')
+              o.append(f'<style>@keyframes sm{{{css_kf}}}</style>')
+              o.append(f'<rect width="{W}" height="{H}" rx="8" fill="{bg}"/>')
+              o.append(f'<g font-family="\'Segoe UI\',system-ui,sans-serif" font-size="9" fill="{tc}">')
+              for x,lbl in mlabels: o.append(f'  <text x="{x}" y="15">{lbl}</text>')
+              for ri,lbl in DOW.items(): o.append(f'  <text x="{PL-4}" y="{PT+ri*STEP+CELL*.8:.1f}" text-anchor="end">{lbl}</text>')
+              o.append('</g>')
+              o.append('<g>')
+              for col,wk in enumerate(weeks):
+                  for row,d in enumerate(wk):
+                      o.append(f'  <rect x="{cl(col)}" y="{ct(row)}" width="{CELL}" height="{CELL}" rx="2" fill="{colors[lv(d["c"])]}"/>')
+              o.append('</g>')
+              o.append(f'<g stroke="{silk}" stroke-linecap="round" stroke-width="1.20" filter="url(#sg)">')
+              for i,(_,_,tx,ty) in enumerate(targets):
+                  L=d2(hx,hy,tx,ty)
+                  o.append(f'  <line x1="{hx:.2f}" y1="{hy:.2f}" x2="{tx:.2f}" y2="{ty:.2f}" stroke-dasharray="{L:.1f}">'+kv("stroke-dashoffset",spoke_starts[i],spoke_starts[i]+SPOKE_DRAW,f"{L:.1f}","0",TOTAL)+'</line>')
+              o.append('</g>')
+              for idx,(rpts,rs) in enumerate(zip(rings,ring_starts)):
+                  n=len(rpts); sw=0.80+idx*0.18
+                  d_str="M "+" L ".join(f"{rx:.2f},{ry:.2f}" for rx,ry in rpts)+" Z"
+                  plen=sum(d2(*rpts[k],*rpts[(k+1)%n]) for k in range(n))
+                  o.append(f'<path d="{d_str}" fill="none" stroke="{silk}" stroke-width="{sw:.2f}" stroke-linejoin="round" filter="url(#sg)" stroke-dasharray="{plen:.1f}">'+kv("stroke-dashoffset",rs,rs+RING_DRAW,f"{plen:.1f}","0",TOTAL)+'</path>')
+              o.append(f'<circle cx="{hx:.2f}" cy="{hy:.2f}" r="2.6" fill="{knot}" opacity="0">'+kv("opacity",APPROACH_T,APPROACH_T+0.35,"0","1",TOTAL)+'</circle>')
+              for i,(_,_,tx,ty) in enumerate(targets):
+                  ap=spoke_starts[i]+SPOKE_DRAW
+                  o.append(f'<circle cx="{tx:.2f}" cy="{ty:.2f}" r="2.0" fill="{knot}" opacity="0">'+kv("opacity",ap,ap+0.28,"0","1",TOTAL)+'</circle>')
+              o.append(f'<g filter="url(#sh)" style="animation:sm {TOTAL:.2f}s linear infinite">')
+              o.append('  <ellipse cx="0" cy="3.0" rx="2.8" ry="3.5" fill="#8a9acf" opacity="0.90"/>')
+              o.append('  <circle  cx="0" cy="0"   r="3.5"             fill="#bdd0ff"/>')
+              o.append('  <g stroke="#99aadd" stroke-width="1.2" stroke-linecap="round">')
+              for dx,dy in [(-4.0,-5.0),(-6.0,-1.5),(-6.0,2.0),(-3.8,5.0),(4.0,-5.0),(6.0,-1.5),(6.0,2.0),(3.8,5.0)]:
+                  o.append(f'    <line x1="0" y1="0" x2="{dx}" y2="{dy}"/>')
+              o.append('  </g>')
+              o.append('  <circle cx="-1.3" cy="-1.4" r="0.8" fill="white" opacity="0.96"/>')
+              o.append('  <circle cx=" 1.3" cy="-1.4" r="0.8" fill="white" opacity="0.96"/>')
+              o.append('</g>')
+              o.append('</svg>')
+              return "\n".join(o)
+
+          weeks = fetch()
+          for theme, fname in [("dark","spider-web-dark.svg"),("light","spider-web-light.svg")]:
+              with open(fname,"w",encoding="utf-8") as f:
+                  f.write(gen(weeks,theme))
+              print(f"Written: {fname}")
+          PYEOF
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add spider-web-dark.svg spider-web-light.svg
+          git diff --staged --quiet || git commit -m "chore: update spider-web SVGs"
+          git push
