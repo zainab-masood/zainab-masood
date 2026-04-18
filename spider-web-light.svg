@@ -64,7 +64,7 @@
   <rect x="99" y="50" width="10" height="10" rx="2" fill="#ebedf0"/>
   <rect x="99" y="63" width="10" height="10" rx="2" fill="#ebedf0"/>
   <rect x="99" y="76" width="10" height="10" rx="2" fill="#ebedf0"/>
-  <rect x="99" y="89" width="10" height="10" rx="2" fill="#216e39"/>
+  <rect x="99" y="89" width="10" height="10" rx="2" fill="#30a14e"/>
   <rect x="99" y="102" width="10" height="10" rx="2" fill="#ebedf0"/>
   <rect x="112" y="24" width="10" height="10" rx="2" fill="#ebedf0"/>
   <rect x="112" y="37" width="10" height="10" rx="2" fill="#216e39"/>
@@ -327,7 +327,7 @@
   <rect x="580" y="102" width="10" height="10" rx="2" fill="#ebedf0"/>
   <rect x="593" y="24" width="10" height="10" rx="2" fill="#ebedf0"/>
   <rect x="593" y="37" width="10" height="10" rx="2" fill="#ebedf0"/>
-  <rect x="593" y="50" width="10" height="10" rx="2" fill="#ebedf0"/>
+  <rect x="593" y="50" width="10" height="10" rx="2" fill="#9be9a8"/>
   <rect x="593" y="63" width="10" height="10" rx="2" fill="#ebedf0"/>
   <rect x="593" y="76" width="10" height="10" rx="2" fill="#ebedf0"/>
   <rect x="593" y="89" width="10" height="10" rx="2" fill="#ebedf0"/>
@@ -393,7 +393,8 @@
   <rect x="710" y="50" width="10" height="10" rx="2" fill="#ebedf0"/>
   <rect x="710" y="63" width="10" height="10" rx="2" fill="#40c463"/>
   <rect x="710" y="76" width="10" height="10" rx="2" fill="#216e39"/>
-  <rect x="710" y="89" width="10" height="10" rx="2" fill="#ebedf0"/>
+  <rect x="710" y="89" width="10" height="10" rx="2" fill="#216e39"/>
+  <rect x="710" y="102" width="10" height="10" rx="2" fill="#ebedf0"/>
 </g>
 <g stroke="rgba(4,4,16,0.86)" stroke-linecap="round" stroke-width="1.20" filter="url(#sg)">
   <line x1="364.00" y1="68.00" x2="234.00" y2="29.00" stroke-dasharray="135.7"><animate attributeName="stroke-dashoffset" values="135.7;135.7;0;0" keyTimes="0;0.0342;0.0726;1" dur="23.40s" repeatCount="indefinite" calcMode="linear"/></line>
