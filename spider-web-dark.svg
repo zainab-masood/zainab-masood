@@ -394,6 +394,7 @@
   <rect x="710" y="63" width="10" height="10" rx="2" fill="#161b22"/>
   <rect x="710" y="76" width="10" height="10" rx="2" fill="#161b22"/>
   <rect x="710" y="89" width="10" height="10" rx="2" fill="#161b22"/>
+  <rect x="710" y="102" width="10" height="10" rx="2" fill="#161b22"/>
 </g>
 <g stroke="rgba(220,230,255,0.82)" stroke-linecap="round" stroke-width="1.20" filter="url(#sg)">
   <line x1="351.00" y1="68.00" x2="221.00" y2="29.00" stroke-dasharray="135.7"><animate attributeName="stroke-dashoffset" values="135.7;135.7;0;0" keyTimes="0;0.0342;0.0726;1" dur="23.40s" repeatCount="indefinite" calcMode="linear"/></line>
