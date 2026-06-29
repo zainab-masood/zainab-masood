@@ -389,6 +389,7 @@
   <rect x="697" y="89" width="10" height="10" rx="2" fill="#161b22"/>
   <rect x="697" y="102" width="10" height="10" rx="2" fill="#161b22"/>
   <rect x="710" y="24" width="10" height="10" rx="2" fill="#161b22"/>
+  <rect x="710" y="37" width="10" height="10" rx="2" fill="#161b22"/>
 </g>
 <g stroke="rgba(220,230,255,0.82)" stroke-linecap="round" stroke-width="1.20" filter="url(#sg)">
   <line x1="559.00" y1="29.00" x2="676.00" y2="107.00" stroke-dasharray="140.6"><animate attributeName="stroke-dashoffset" values="140.6;140.6;0;0" keyTimes="0;0.0423;0.0899;1" dur="18.90s" repeatCount="indefinite" calcMode="linear"/></line>
